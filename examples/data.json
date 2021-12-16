@@ -1,0 +1,37 @@
+{
+    "endpoint1": {
+        "200": {
+            "one": [
+		    {
+			    "id": 10
+		    }
+	    ],
+            "zero": [],
+	    "two": [
+		    {
+			    "id": 11
+		    },
+		    {
+			    "id": 12
+		    }
+	    ]
+        },
+	"420": {
+		"one": "Error"
+	}
+    },
+    "endpoint2": {
+	    "200": {
+		    "one": [
+			    {
+				    "somekey": "string"
+			    }
+		    ]
+	    },
+	    "500": {
+		    "one": {
+			    "error": "Status Code 500"
+		    }
+	    }
+    }
+}

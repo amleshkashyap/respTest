@@ -1,0 +1,9 @@
+MyStruct:
+  username: string
+  age: uint64
+  attributes: MySecondStruct
+
+
+MySecondStruct:
+  hostname: string
+  ip_addresses: "[]string"
