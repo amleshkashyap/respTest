@@ -1,0 +1,52 @@
+{
+    "/endpoint/succ": {
+	    "paramId": {
+		    "code": 200,
+		    "headers": {
+			    "content-type": "application/json",
+			    "unique-header": "paramId"
+		    },
+		    "response": [
+			    {
+				    "id": 10
+			    }
+		    ]
+	    }
+    },
+    "/endpoint/err": {
+	    "paramId": {
+		    "code": 400,
+		    "headers": {
+			    "content-type": "application/json",
+			    "unique-header": "paramId"
+		    },
+		    "response": {
+			    "error": "Error"
+		    }
+	    }
+    },
+    "/endpoint-two/one": {
+	    "paramId": {
+		    "code": 200,
+		    "headers": {
+			    "content-type": "application/json",
+			    "unique-header": "random/value"
+		    },
+		    "response": {
+			    "somekey": "string"
+		    }
+	    }
+    },
+    "/endpoint-two/two": {
+	    "paramId": {
+		    "code": 500,
+		    "headers": {
+			    "content-type": "application/json",
+			    "random-header": "random/value"
+		    },
+		    "response": {
+			    "error": "Some Error"
+		    }
+	    }
+    }
+}
