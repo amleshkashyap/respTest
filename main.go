@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"fmt"
+	"time"
 	"strconv"
 	"strings"
 	"regexp"
@@ -10,6 +11,7 @@ import (
 	"math/rand"
 	"io/ioutil"
 	"encoding/json"
+	"github.com/amleshkashyap/respTest/compute"
 )
 
 var MODE string
@@ -109,21 +111,34 @@ func readAndReturnMode2(endpoint, param string) (int, []byte, map[string]string,
 
 	if endpoints[endpoint] == nil {
 		found := false
+		var endpointCandidates []string
 		for key, _ := range endpoints {
 			if strings.Contains(key, "{id}") {
 				newEndpointStr := strings.Replace(key, "{id}", ".*", 1)
 				matched, _ := regexp.MatchString(newEndpointStr, endpoint)
 				if matched == true {
 					found = true
-					endpoint = key
-					break
+					endpointCandidates = append(endpointCandidates, key)
 				}
 			}
 		}
 		if found == false {
 			return 599, nil, nil, false, "Data for this endpoint isn't present, returning."
 		}
+
+		max, ePoint := 0, ""
+		for _, endP := range endpointCandidates {
+			endpointStr := strings.Replace(endP, "{id}", "", 1)
+			result := compute.Longest(endpointStr, endpoint)
+			if (len(result) > max) {
+				max = len(result)
+				ePoint = endP
+			}
+		}
+		endpoint = ePoint
 	}
+
+	// fmt.Printf("    Serving from selected endpoint: %s, for param: %s\n\n", endpoint, param)
 
 	var paramData map[string]json.RawMessage
 	json.Unmarshal(endpoints[endpoint], &paramData)
@@ -147,8 +162,8 @@ func readAndReturnMode2(endpoint, param string) (int, []byte, map[string]string,
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
-	fmt.Printf("Full path is %s\n", path)
 	paramId := r.URL.Query().Get(os.Getenv("UNIQUE_PARAM_ID"))
+	fmt.Printf("Full path is: %s, Unique param is: %s\n", path, paramId)
 
 	if MODE == "mode-2" {
 		code, data, headers, success, message := readAndReturnMode2(path, paramId)
@@ -156,6 +171,11 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			fmt.Printf("Error Occurred: %s\n", message)
 			w.WriteHeader(code)
 		} else {
+			if headers["Sleep-For-Timeout"] != "" {
+				t, _ := strconv.Atoi(headers["Sleep-For-Timeout"])
+				time.Sleep(time.Duration(t) * time.Second)
+			}
+
 			for key, val := range headers {
 				w.Header().Set(key, val)
 			}
