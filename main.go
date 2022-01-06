@@ -15,16 +15,11 @@ import (
 )
 
 var MODE string
+var MATCHER string
+var DATAPATH string
 
 func readAndReturnMode1(endpoint string) (string, []byte, bool, string) {
-	prefix := ""
-	if len(os.Args) > 2 {
-		prefix = "samples"
-	} else {
-		prefix = "examples"
-	}
-
-	endpointData, err := ioutil.ReadFile(fmt.Sprintf("%s/endpoints.json", prefix))
+	endpointData, err := ioutil.ReadFile(fmt.Sprintf("%s/endpoints.json", DATAPATH))
         if err != nil {
                 return "", nil, false, "Can't execute without input file"
         }
@@ -47,7 +42,7 @@ func readAndReturnMode1(endpoint string) (string, []byte, bool, string) {
 	randomIndex := rand.Intn(len(statusCodes))
 	code := fmt.Sprintf("%d", statusCodes[randomIndex])
 
-	responseJson, err := ioutil.ReadFile(fmt.Sprintf("%s/data.json", prefix))
+	responseJson, err := ioutil.ReadFile(fmt.Sprintf("%s/data.json", DATAPATH))
 	if err != nil {
 		return "", nil, false, fmt.Sprintf("Error occurred in reading file: %s\n", err.Error())
 	}
@@ -94,14 +89,7 @@ func readAndReturnMode1(endpoint string) (string, []byte, bool, string) {
 }
 
 func readAndReturnMode2(endpoint, param string) (int, []byte, map[string]string, bool, string) {
-        prefix := ""
-        if len(os.Args) > 2 {
-                prefix = "samples"
-        } else {
-                prefix = "examples"
-        }
-
-        endpointData, err := ioutil.ReadFile(fmt.Sprintf("%s/new_data.json", prefix))
+        endpointData, err := ioutil.ReadFile(fmt.Sprintf("%s/new_data.json", DATAPATH))
         if err != nil {
                 return 599, nil, nil, false, "Can't execute without input file"
         }
@@ -110,30 +98,38 @@ func readAndReturnMode2(endpoint, param string) (int, []byte, map[string]string,
         json.Unmarshal(endpointData, &endpoints)
 
 	if endpoints[endpoint] == nil {
-		found := false
-		var endpointCandidates []string
-		for key, _ := range endpoints {
-			if strings.Contains(key, "{id}") {
-				newEndpointStr := strings.Replace(key, "{id}", ".*", 1)
-				matched, _ := regexp.MatchString(newEndpointStr, endpoint)
-				if matched == true {
-					found = true
-					endpointCandidates = append(endpointCandidates, key)
+		found, max, ePoint := false, 0, ""
+		if MATCHER == "Custom" {
+			for key, _ := range endpoints {
+				if strings.Contains(key, "{id}") == false { continue }
+				endpointStr := strings.Replace(key, "{id}", "", 1)
+				length, match := compute.UrlPatternMatch(endpointStr, endpoint)
+				if match == false { continue }
+				found = true
+				if length > max {
+					max = length
+					ePoint = key
+				}
+			}
+		} else {
+			for key, _ := range endpoints {
+				if strings.Contains(key, "{id}") {
+					newEndpointStr := strings.Replace(key, "{id}", ".*", 1)
+					matched, _ := regexp.MatchString(newEndpointStr, endpoint)
+					if matched == true {
+						found = true
+						endpointStr := strings.Replace(key, "{id}", "", 1)
+						result := compute.Longest(endpointStr, endpoint)
+						if len(result) > max {
+							max = len(result)
+							ePoint = key
+						}
+					}
 				}
 			}
 		}
 		if found == false {
 			return 599, nil, nil, false, "Data for this endpoint isn't present, returning."
-		}
-
-		max, ePoint := 0, ""
-		for _, endP := range endpointCandidates {
-			endpointStr := strings.Replace(endP, "{id}", "", 1)
-			result := compute.Longest(endpointStr, endpoint)
-			if (len(result) > max) {
-				max = len(result)
-				ePoint = endP
-			}
 		}
 		endpoint = ePoint
 	}
@@ -149,6 +145,12 @@ func readAndReturnMode2(endpoint, param string) (int, []byte, map[string]string,
 
 	var data map[string]json.RawMessage
 	json.Unmarshal(paramData[param], &data)
+
+	if data["sleep-for-timeout"] != nil {
+		var sleep int
+		json.Unmarshal(data["sleep-for-timeout"], &sleep)
+		time.Sleep(time.Duration(sleep) * time.Second)
+	}
 
 	if (data["code"] != nil && data["response"] != nil) {
 		var code int
@@ -171,11 +173,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			fmt.Printf("Error Occurred: %s\n", message)
 			w.WriteHeader(code)
 		} else {
-			if headers["Sleep-For-Timeout"] != "" {
-				t, _ := strconv.Atoi(headers["Sleep-For-Timeout"])
-				time.Sleep(time.Duration(t) * time.Second)
-			}
-
 			for key, val := range headers {
 				w.Header().Set(key, val)
 			}
@@ -203,12 +200,39 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 func httpServer() {
 	http.HandleFunc("/", handler)
+
 	if len(os.Args) < 2 {
 		fmt.Println("Can't run the server without the mode")
 		os.Exit(1)
+	} else {
+		if os.Args[1] == "mode-1" {
+			MODE = "mode-1"
+		} else if (os.Args[1] == "mode-2") {
+			MODE = "mode-2"
+		} else {
+			fmt.Println("Invalid mode, Exiting!")
+			os.Exit(1)
+		}
 	}
-	MODE = os.Args[1]
-        fmt.Println("Starting HTTP Server on Port: ", 3000)
+
+	DATAPATH = "examples"
+	MATCHER = "Regex_LCS"
+	if len(os.Args) == 3 {
+		if os.Args[2] == "samples" {
+			DATAPATH = "samples"
+		} else if os.Args[2] == "Custom" {
+			MATCHER = "Custom"
+		}
+	} else if len(os.Args) == 4 {
+		if os.Args[2] == "samples" {
+			DATAPATH = "samples"
+		}
+		if os.Args[3] == "Custom" {
+			MATCHER = "Custom"
+		}
+	}
+
+	fmt.Printf("Starting HTTP Server on Port: %d, Mode: %s, Datapath: %s, Matcher: %s\n", 3000, MODE, DATAPATH, MATCHER)
 	err := http.ListenAndServe(":3000", nil)
         if err != nil {
                 panic(err.Error())

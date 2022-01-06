@@ -5,8 +5,14 @@ build:
 run:
 	./listen "mode-2"
 
+runCustom:
+	./listen "mode-2" "Custom"
+
 runSample:
-	./listen "mode-2" "value"
+	./listen "mode-2" "samples"
+
+runSampleCustom:
+	./listen "mode-2" "samples" "Custom"
 
 runMode1:
 	./listen "mode-1"

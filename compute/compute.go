@@ -1,5 +1,8 @@
 package compute
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 func Max(more ...int) int {
 	max_num := more[0]
@@ -11,6 +14,7 @@ func Max(more ...int) int {
 	return max_num
 }
 
+// source: https://stackoverflow.com/a/20147472 - Fix this DP code
 func Longest(str1, str2 string) string {
 	len1 := len(str1)
 	len2 := len(str2)
@@ -41,5 +45,20 @@ func Longest(str1, str2 string) string {
 	return result
 }
 
-// source: https://stackoverflow.com/a/20147472
-// Write proper DP code for this
+// This can be used instead of regexp + LCS combination
+func UrlPatternMatch(testUrl, url string) (int, bool) {
+	testUrlList := strings.Split(testUrl, "/")
+	urlList := strings.Split(url, "/")
+	if len(testUrlList) != len(urlList) {
+		return 0, false
+	}
+
+	length := 0
+	for i, block := range urlList {
+		if block == testUrlList[i] {
+			length += 1
+		} else {
+		}
+	}
+	return length, true
+}

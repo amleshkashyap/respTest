@@ -42,10 +42,59 @@
 		    "code": 500,
 		    "headers": {
 			    "content-type": "application/json",
-			    "random-header": "random/value"
+			    "unique-header": "random/value"
 		    },
 		    "response": {
 			    "error": "Some Error"
+		    }
+	    }
+    },
+    "/endpoint-two/three": {
+	    "paramId": {
+		    "code": 200,
+		    "headers": {
+			    "content-type": "application/json",
+			    "unique-header": "unique/value"
+		    },
+		    "response": {
+			    "message": "Successful at two/three"
+		    }
+	    }
+    },
+    "/endpoint-two/three/{id}": {
+	    "paramId": {
+		    "code": 200,
+		    "headers": {
+			    "content-type": "application/json",
+			    "unique-header": "unique/value"
+		    },
+		    "response": {
+			    "message": "Successful at two/three/id"
+		    }
+	    }
+    },
+    "/endpoint-two/{id}": {
+	    "paramId": {
+		    "code": 200,
+		    "headers": {
+			    "content-type": "application/json",
+			    "unique-header": "unique/value"
+		    },
+		    "response": {
+			    "message": "Successful at two/id"
+		    },
+		    "sleep-for-timeout": 2
+	    }
+    },
+    "/endpoint-two/three/{id}/four": {
+	    "paramId": {
+		    "code": 200,
+		    "headers": {
+			    "content-type": "application/json",
+			    "unique-header": "unique/value"
+		    },
+		    "response": {
+			    "message": "Successful at two/three/id/four"
 		    }
 	    }
     }
